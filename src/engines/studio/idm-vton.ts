@@ -191,21 +191,11 @@ export const idmVtonProvider: TryOnProvider = {
         latencyMs,
       };
     } catch (error) {
-      client.close();
-
-      const errMsg = error instanceof Error ? error.message : String(error);
-
-      // Check for quota errors
-      const isQuota = /quota|ZeroGPU|exceeded|rate.?limit/i.test(errMsg);
-      if (isQuota) {
-        onStatus({
-          stage: 'error',
-          message: 'GPU quota exhausted. Try again later, switch to Instant mode, or use your own HF token.',
-          retryable: true,
-          isQuota: true,
-        });
+      try {
+        client.close();
+      } catch {
+        // ignore
       }
-
       throw error;
     }
   },

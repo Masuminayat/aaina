@@ -1,46 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
 import { Clock, X, RotateCcw, Sparkles } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onRetry: () => void;
-  initialCountdownSeconds?: number;
 }
 
 export function QuotaModal({
   isOpen,
   onClose,
   onRetry,
-  initialCountdownSeconds = 45,
 }: Props) {
-  const [countdown, setCountdown] = useState(initialCountdownSeconds);
-  const retriedRef = useRef(false);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setCountdown(initialCountdownSeconds);
-      retriedRef.current = false;
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(timer);
-          if (!retriedRef.current) {
-            retriedRef.current = true;
-            onRetry();
-          }
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isOpen, initialCountdownSeconds, onRetry]);
-
   if (!isOpen) return null;
 
   return (
@@ -73,22 +43,22 @@ export function QuotaModal({
           The open-source diffusion cluster is currently under high global traffic. You don't need to do anything—we are holding your position and will automatically run your try-on the moment your slot clears.
         </p>
 
-        {/* Automatic Countdown Card */}
+        {/* Automatic Instant Card */}
         <div className="p-4 rounded-2xl bg-stone-950/70 border border-stone-800/80 mb-5 flex items-center justify-between shadow-inner">
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
             <div>
               <span className="text-xs font-bold block text-stone-200">
-                {countdown > 0 ? 'Automatic Auto-Retry in progress' : 'Slot reached! Executing now…'}
+                Instant Neural Drape Available
               </span>
               <span className="text-[11px] text-stone-400">
-                {countdown > 0 ? 'Cycling server queue in background' : 'Connecting to ZeroGPU…'}
+                Zero waiting: Fits garment contours on-device
               </span>
             </div>
           </div>
 
-          <div className="text-sm font-mono font-extrabold text-emerald-400 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 shadow-sm">
-            0:{(countdown).toString().padStart(2, '0')}
+          <div className="text-xs font-bold text-emerald-400 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 shadow-sm">
+            Instant (&lt;1s)
           </div>
         </div>
 
@@ -106,7 +76,7 @@ export function QuotaModal({
             className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>{countdown === 0 ? 'Retrying Now…' : 'Skip Wait & Retry Now'}</span>
+            <span>Fit Instantly (No Waiting)</span>
           </button>
 
           <button
