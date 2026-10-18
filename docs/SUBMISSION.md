@@ -25,7 +25,7 @@ Aaina transforms any web browser or smartphone into a real-time virtual fitting 
 
 ### 4. Deliverable Links
 - **GitHub Repository URL:** https://github.com/Masuminayat/aaina
-- **Live Demo URL:** [PLACEHOLDER: Live Vercel URL once deployed]
+- **Live Demo URL:** https://aaina-one.vercel.app
 - **Demo Video URL (60–90s):** [PLACEHOLDER: YouTube / Loom / Drive Demo Video Link]
 
 ---

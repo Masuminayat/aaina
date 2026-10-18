@@ -3,6 +3,7 @@
 > **"See it on you before you buy it."**  
 > Entry for the **NYLP AI Hackathon 2026**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-aaina--one.vercel.app-emerald?style=for-the-badge&logo=vercel)](https://aaina-one.vercel.app)
 [![Vite](https://img.shields.io/badge/Vite-8.3-blue.svg)](https://vitejs.dev/)
 [![React](https://img.shields.io/badge/React-19-cyan.svg)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.0-38bdf8.svg)](https://tailwindcss.com/)
