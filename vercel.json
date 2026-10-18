@@ -30,6 +30,9 @@
     },
     "api/advise.ts": {
       "maxDuration": 30
+    },
+    "api/token.ts": {
+      "maxDuration": 10
     }
   }
 }

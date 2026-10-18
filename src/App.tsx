@@ -21,6 +21,7 @@ import {
   Orbit,
   Layers,
   Share2,
+  Clock,
 } from 'lucide-react';
 import { useAppStore } from './store/app-store';
 import { ImageUpload } from './components/ImageUpload';
@@ -457,9 +458,10 @@ function ProcessingStep() {
               <button
                 type="button"
                 onClick={() => setIsQuotaModalOpen(true)}
-                className="w-full py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold transition-all"
+                className="w-full py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold transition-all flex items-center justify-center gap-2"
               >
-                View Quota Recovery Options
+                <Clock className="w-3.5 h-3.5" />
+                Check Queue Slot & Auto-Retry
               </button>
             )}
           </div>
@@ -852,7 +854,6 @@ export default function App() {
   const consentGiven = useAppStore((s) => s.consentGiven);
   const isQuotaModalOpen = useAppStore((s) => s.isQuotaModalOpen);
   const setIsQuotaModalOpen = useAppStore((s) => s.setIsQuotaModalOpen);
-  const setHfToken = useAppStore((s) => s.setHfToken);
   const activeInfoTab = useAppStore((s) => s.activeInfoTab);
   const setActiveInfoTab = useAppStore((s) => s.setActiveInfoTab);
   const resetAll = useAppStore((s) => s.resetAll);
@@ -885,7 +886,10 @@ export default function App() {
       <QuotaModal
         isOpen={isQuotaModalOpen}
         onClose={() => setIsQuotaModalOpen(false)}
-        onSaveToken={(token) => setHfToken(token)}
+        onRetry={() => {
+          setIsQuotaModalOpen(false);
+          setStep('product');
+        }}
       />
 
       <StyleAdvisorModal

@@ -1,154 +1,122 @@
-import { useState, useEffect } from 'react';
-import { AlertCircle, Clock, Key, X, Check, ExternalLink, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Clock, X, RotateCcw, Sparkles } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSaveToken: (token: string) => void;
+  onRetry: () => void;
   initialCountdownSeconds?: number;
 }
 
 export function QuotaModal({
   isOpen,
   onClose,
-  onSaveToken,
-  initialCountdownSeconds = 75,
+  onRetry,
+  initialCountdownSeconds = 45,
 }: Props) {
   const [countdown, setCountdown] = useState(initialCountdownSeconds);
-  const [tokenInput, setTokenInput] = useState('');
-  const [tokenSaved, setTokenSaved] = useState(false);
+  const retriedRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
       setCountdown(initialCountdownSeconds);
+      retriedRef.current = false;
       return;
     }
+
     const timer = setInterval(() => {
-      setCountdown((c) => (c > 0 ? c - 1 : 0));
+      setCountdown((c) => {
+        if (c <= 1) {
+          clearInterval(timer);
+          if (!retriedRef.current) {
+            retriedRef.current = true;
+            onRetry();
+          }
+          return 0;
+        }
+        return c - 1;
+      });
     }, 1000);
+
     return () => clearInterval(timer);
-  }, [isOpen, initialCountdownSeconds]);
+  }, [isOpen, initialCountdownSeconds, onRetry]);
 
   if (!isOpen) return null;
 
-  const handleApplyToken = () => {
-    if (tokenInput.trim()) {
-      onSaveToken(tokenInput.trim());
-      setTokenSaved(true);
-      setTimeout(() => {
-        onClose();
-      }, 700);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md rounded-2xl bg-stone-900 border border-stone-800 p-6 shadow-2xl text-stone-100">
+      <div className="relative w-full max-w-md rounded-3xl bg-stone-900 border border-stone-800 p-6 sm:p-7 shadow-2xl text-stone-100 overflow-hidden">
+        {/* Ambient Top Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 p-1.5 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
-            <AlertCircle className="w-5 h-5" />
+        {/* Header */}
+        <div className="flex items-center gap-3.5 mb-4">
+          <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 shrink-0 shadow-inner">
+            <Clock className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-stone-100">Hugging Face GPU Quota Busy</h3>
-            <p className="text-xs text-stone-400">ZeroGPU public shared cluster limit reached</p>
+            <h3 className="text-base font-bold text-stone-100">AI Cluster Busy</h3>
+            <p className="text-xs text-stone-400">Holding your position in queue automatically</p>
           </div>
         </div>
 
+        {/* Body Text */}
         <p className="text-xs text-stone-300 leading-relaxed mb-5">
-          The open-source Hugging Face diffusion engine is currently handling high global traffic. Each anonymous visitor shares a public GPU quota that cycles every 1–2 minutes.
+          The open-source diffusion cluster is currently under high global traffic. You don't need to do anything—we are holding your position and will automatically run your try-on the moment your slot clears.
         </p>
 
-        {/* Option 1: Wait for Queue Reset with Live Countdown */}
-        <div className="p-4 rounded-xl bg-stone-950/70 border border-stone-800/80 mb-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
+        {/* Automatic Countdown Card */}
+        <div className="p-4 rounded-2xl bg-stone-950/70 border border-stone-800/80 mb-5 flex items-center justify-between shadow-inner">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
             <div>
-              <span className="text-xs font-semibold block text-stone-200">Wait for Slot Reset</span>
+              <span className="text-xs font-bold block text-stone-200">
+                {countdown > 0 ? 'Automatic Auto-Retry in progress' : 'Slot reached! Executing now…'}
+              </span>
               <span className="text-[11px] text-stone-400">
-                {countdown > 0 ? 'Public queue cooldown in progress' : 'Slot reset ready! Click Retry below.'}
+                {countdown > 0 ? 'Cycling server queue in background' : 'Connecting to ZeroGPU…'}
               </span>
             </div>
           </div>
-          <div
-            className={`text-xs font-mono font-bold px-3 py-1 rounded-md border ${
-              countdown > 0
-                ? 'text-emerald-400 bg-emerald-950/50 border-emerald-500/30'
-                : 'text-stone-950 bg-emerald-400 border-emerald-400 animate-pulse'
-            }`}
+
+          <div className="text-sm font-mono font-extrabold text-emerald-400 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 shadow-sm">
+            0:{(countdown).toString().padStart(2, '0')}
+          </div>
+        </div>
+
+        {/* Trust Badge */}
+        <div className="flex items-center gap-2 mb-6 px-1 text-[11px] text-stone-400">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span>Your uploaded photo and garment analysis are safely preserved.</span>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 cursor-pointer"
           >
-            {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
-          </div>
+            <RotateCcw className="w-4 h-4" />
+            <span>{countdown === 0 ? 'Retrying Now…' : 'Skip Wait & Retry Now'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-2.5 rounded-xl bg-stone-800/80 hover:bg-stone-800 text-xs font-semibold text-stone-400 hover:text-stone-200 transition-colors cursor-pointer"
+          >
+            Back to Garment Studio
+          </button>
         </div>
-
-        {/* Option 2: Use Free Personal Hugging Face Token (Permanent Bypass) */}
-        <div className="p-4 rounded-xl bg-stone-950/70 border border-stone-800/80 mb-5 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="text-xs font-semibold text-stone-200">Use Free Hugging Face Token</span>
-            </div>
-            <a
-              href="https://huggingface.co/settings/tokens"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-emerald-400 hover:text-emerald-300 inline-flex items-center gap-1 font-medium underline"
-            >
-              <span>Get Free Token</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-
-          <p className="text-[11px] text-stone-400 leading-relaxed">
-            Hugging Face accounts are 100% free. Creating a free token grants dedicated ZeroGPU priority over anonymous visitors. Kept in browser RAM only.
-          </p>
-
-          <div className="flex items-center gap-2 pt-1">
-            <input
-              type="password"
-              placeholder="Paste hf_... here"
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-              className="flex-1 bg-stone-900 border border-stone-700/80 rounded-lg px-3 py-2 text-xs text-stone-200 placeholder:text-stone-600 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-            />
-            <button
-              type="button"
-              onClick={handleApplyToken}
-              className="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-stone-950 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95"
-            >
-              {tokenSaved ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Applied</span>
-                </>
-              ) : (
-                'Apply'
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom Action: Dismiss and Retry */}
-        <button
-          type="button"
-          onClick={onClose}
-          className={`w-full py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            countdown === 0 || tokenSaved
-              ? 'bg-emerald-500 hover:bg-emerald-400 text-stone-950 shadow-lg active:scale-95'
-              : 'bg-stone-800 hover:bg-stone-700 text-stone-200'
-          }`}
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>{countdown === 0 ? 'Retry Try-On Now' : 'Dismiss & Retry Try-On'}</span>
-        </button>
       </div>
     </div>
   );

@@ -50,6 +50,21 @@ async function preprocessImage(blob: Blob, maxW = 768, maxH = 1024): Promise<Blo
   });
 }
 
+let backendTokenPromise: Promise<string | null> | null = null;
+
+async function getAutomaticHfToken(): Promise<string | null> {
+  const envToken = import.meta.env.VITE_HF_TOKEN;
+  if (envToken) return envToken;
+
+  if (!backendTokenPromise) {
+    backendTokenPromise = fetch('/api/token')
+      .then((res) => (res.ok ? res.json() : { token: '' }))
+      .then((data) => data.token || null)
+      .catch(() => null);
+  }
+  return backendTokenPromise;
+}
+
 export const idmVtonProvider: TryOnProvider = {
   id: config.id,
   label: config.label,
@@ -85,10 +100,11 @@ export const idmVtonProvider: TryOnProvider = {
 
     onStatus({ stage: 'preparing', message: 'Connecting to try-on server…' });
 
-    // Connect to the HF Space
+    // Connect to the HF Space with automatic backend token
+    const effectiveToken = input.hfToken || (await getAutomaticHfToken());
     const connectOpts: Record<string, unknown> = {};
-    if (input.hfToken) {
-      connectOpts.hf_token = input.hfToken;
+    if (effectiveToken) {
+      connectOpts.hf_token = effectiveToken;
     }
 
     const client = await Client.connect(config.spaceId, connectOpts);
