@@ -67,19 +67,15 @@ export function CompareSlider({ beforeUrl, afterUrl, className = '' }: Props) {
         After Try-On
       </div>
 
-      {/* Before Image (Clipped Left Layer) */}
+      {/* Before Image (Clipped Left Layer using standard CSS clip-path) */}
       <div
-        className="absolute inset-0 overflow-hidden pointer-events-none"
-        style={{ width: `${sliderPosition}%` }}
+        className="absolute inset-0 pointer-events-none"
+        style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
       >
         <img
           src={beforeUrl}
           alt="Before Original Photo"
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
-          style={{
-            width: containerRef.current ? `${containerRef.current.clientWidth}px` : '100%',
-            maxWidth: 'none',
-          }}
+          className="w-full h-full object-contain pointer-events-none block"
         />
         <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-stone-900/80 border border-stone-700/60 text-[11px] font-semibold text-stone-300 backdrop-blur-md z-10 shadow-lg">
           Original Photo

@@ -9,8 +9,10 @@ import type { GarmentAnalysis } from '../../api/analyze';
 import type { InfoPageTab } from '../components/InfoPagesModal';
 import { analyzePhoto, autoFixPhoto } from '../ai/coach/photo-coach';
 
+import type { SavedLook } from '../components/OutfitBuilderModal';
+
 export type AppStep = 'landing' | 'person' | 'product' | 'processing' | 'result';
-export type ResultViewMode = 'compare' | 'panzoom';
+export type ResultViewMode = 'compare' | 'panzoom' | 'spin';
 
 interface AppState {
   // Flow navigation
@@ -46,6 +48,19 @@ interface AppState {
   setTryOnResult: (result: TryOnResult | null) => void;
   resultViewMode: ResultViewMode;
   setResultViewMode: (mode: ResultViewMode) => void;
+
+  // Phase 2 Interactive Modals
+  isAdvisorOpen: boolean;
+  setIsAdvisorOpen: (v: boolean) => void;
+  isInstantMirrorOpen: boolean;
+  setIsInstantMirrorOpen: (v: boolean) => void;
+  isOutfitBuilderOpen: boolean;
+  setIsOutfitBuilderOpen: (v: boolean) => void;
+
+  // Saved Looks (Look A vs Look B)
+  savedLooks: SavedLook[];
+  addSavedLook: (name?: string) => void;
+  removeSavedLook: (id: string) => void;
 
   // Quota & in-memory token
   isQuotaModalOpen: boolean;
@@ -212,6 +227,33 @@ export const useAppStore = create<AppState>((set, get) => ({
   resultViewMode: 'compare',
   setResultViewMode: (mode) => set({ resultViewMode: mode }),
 
+  // Phase 2 Interactive Modals
+  isAdvisorOpen: false,
+  setIsAdvisorOpen: (v) => set({ isAdvisorOpen: v }),
+  isInstantMirrorOpen: false,
+  setIsInstantMirrorOpen: (v) => set({ isInstantMirrorOpen: v }),
+  isOutfitBuilderOpen: false,
+  setIsOutfitBuilderOpen: (v) => set({ isOutfitBuilderOpen: v }),
+
+  // Saved Looks
+  savedLooks: [],
+  addSavedLook: (name?: string) => {
+    const current = get().tryOnResult;
+    if (!current?.imageUrl) return;
+    const looks = get().savedLooks;
+    const newLook: SavedLook = {
+      id: `look_${Date.now()}`,
+      name: name || `Look #${looks.length + 1}`,
+      imageUrl: current.imageUrl,
+      garmentTitle: get().garmentAnalysis?.garment_description || get().diffusionPrompt,
+      timestamp: Date.now(),
+    };
+    set({ savedLooks: [newLook, ...looks] });
+  },
+  removeSavedLook: (id: string) => {
+    set({ savedLooks: get().savedLooks.filter((l) => l.id !== id) });
+  },
+
   // Quota & HF Token
   isQuotaModalOpen: false,
   setIsQuotaModalOpen: (v) => set({ isQuotaModalOpen: v }),
@@ -243,6 +285,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       tryOnStatus: null,
       tryOnResult: null,
       resultViewMode: 'compare',
+      isAdvisorOpen: false,
+      isInstantMirrorOpen: false,
+      isOutfitBuilderOpen: false,
+      savedLooks: [],
       isQuotaModalOpen: false,
       hfToken: null,
       activeInfoTab: null,

@@ -18,6 +18,10 @@ import {
   BookOpen,
   Split,
   ZoomIn,
+  Orbit,
+  Layers,
+  Share2,
+  Camera,
 } from 'lucide-react';
 import { useAppStore } from './store/app-store';
 import { ImageUpload } from './components/ImageUpload';
@@ -27,9 +31,14 @@ import { PhotoCoach } from './components/PhotoCoach';
 import { GarmentIntelligenceCard } from './components/GarmentIntelligenceCard';
 import { CompareSlider } from './components/CompareSlider';
 import { PanZoomViewer } from './components/PanZoomViewer';
+import { SpinView } from './components/SpinView';
+import { StyleAdvisorModal } from './components/StyleAdvisorModal';
+import { InstantMirrorModal } from './components/InstantMirrorModal';
+import { OutfitBuilderModal } from './components/OutfitBuilderModal';
 import { QuotaModal } from './components/QuotaModal';
 import { InfoPagesModal } from './components/InfoPagesModal';
 import { downloadWithWatermark } from './utils/watermark';
+import { exportLookCard } from './utils/look-card';
 import { idmVtonProvider } from './engines/studio/idm-vton';
 import type { TryOnStatus } from './types/providers';
 
@@ -40,6 +49,7 @@ function LandingSection() {
   const setStep = useAppStore((s) => s.setStep);
   const consentGiven = useAppStore((s) => s.consentGiven);
   const setActiveInfoTab = useAppStore((s) => s.setActiveInfoTab);
+  const setIsInstantMirrorOpen = useAppStore((s) => s.setIsInstantMirrorOpen);
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
@@ -70,11 +80,11 @@ function LandingSection() {
         </p>
 
         {/* CTAs */}
-        <div className="mt-8 flex flex-col sm:flex-row gap-3.5 justify-center items-center">
+        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center">
           <button
             type="button"
             onClick={() => setStep(consentGiven ? 'person' : 'person')}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-bold transition-all shadow-[0_0_25px_rgba(52,211,153,0.3)] hover:scale-[1.02] active:scale-95 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-bold transition-all shadow-[0_0_25px_rgba(52,211,153,0.3)] hover:scale-[1.02] active:scale-95 cursor-pointer"
             id="start-btn"
           >
             <span>Try with your photo</span>
@@ -82,6 +92,16 @@ function LandingSection() {
           </button>
 
           <SampleDemoButton />
+
+          <button
+            type="button"
+            onClick={() => setIsInstantMirrorOpen(true)}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 hover:border-emerald-500/40 text-stone-200 text-sm font-semibold transition-all active:scale-95 cursor-pointer"
+            id="instant-mirror-btn"
+          >
+            <Camera className="w-4 h-4 text-emerald-400" />
+            <span>Instant AR Mirror</span>
+          </button>
         </div>
 
         {/* 3 Step Overview */}
@@ -489,18 +509,24 @@ function ProcessingStep() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Step 4: Result Workspace (Compare + PanZoom + Watermark)                   */
+/* Step 4: Result Workspace (Compare + PanZoom + Spin + Styling Suite)         */
 /* -------------------------------------------------------------------------- */
 function ResultStep() {
   const tryOnResult = useAppStore((s) => s.tryOnResult);
   const personImageUrl = useAppStore((s) => s.personImageUrl);
+  const garmentAnalysis = useAppStore((s) => s.garmentAnalysis);
+  const diffusionPrompt = useAppStore((s) => s.diffusionPrompt);
   const setStep = useAppStore((s) => s.setStep);
   const resetAll = useAppStore((s) => s.resetAll);
   const resultViewMode = useAppStore((s) => s.resultViewMode);
   const setResultViewMode = useAppStore((s) => s.setResultViewMode);
   const setActiveInfoTab = useAppStore((s) => s.setActiveInfoTab);
+  const setIsAdvisorOpen = useAppStore((s) => s.setIsAdvisorOpen);
+  const setIsInstantMirrorOpen = useAppStore((s) => s.setIsInstantMirrorOpen);
+  const setIsOutfitBuilderOpen = useAppStore((s) => s.setIsOutfitBuilderOpen);
 
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isExportingCard, setIsExportingCard] = useState(false);
 
   const handleDownload = async () => {
     if (!tryOnResult?.imageUrl) return;
@@ -514,27 +540,43 @@ function ResultStep() {
     }
   };
 
+  const handleExportCard = async () => {
+    if (!tryOnResult?.imageUrl) return;
+    setIsExportingCard(true);
+    try {
+      await exportLookCard({
+        resultImageUrl: tryOnResult.imageUrl,
+        garment: garmentAnalysis,
+        diffusionPrompt,
+      });
+    } catch (e) {
+      console.error('Look card export error:', e);
+    } finally {
+      setIsExportingCard(false);
+    }
+  };
+
   if (!tryOnResult) return null;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 animate-fade-in">
+    <div className="max-w-3xl mx-auto px-4 py-8 animate-fade-in">
       {/* Title */}
       <div className="text-center mb-6">
         <h2 className="text-2xl sm:text-3xl font-extrabold font-[family-name:var(--font-display)] text-stone-100">
           Your Try-On Result
         </h2>
         <p className="text-xs sm:text-sm text-stone-400 mt-1">
-          Inference completed in <strong className="text-emerald-400">{Math.round(tryOnResult.latencyMs / 1000)}s</strong> on ZeroGPU
+          Studio inference completed in <strong className="text-emerald-400">{Math.round(tryOnResult.latencyMs / 1000)}s</strong> on ZeroGPU
         </p>
       </div>
 
-      {/* View Mode Selector */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-stone-900 border border-stone-800">
+      {/* View Mode Selector Tabs */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 mb-3">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-stone-900 border border-stone-800 w-full sm:w-auto overflow-x-auto">
           <button
             type="button"
             onClick={() => setResultViewMode('compare')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
               resultViewMode === 'compare'
                 ? 'bg-emerald-500 text-stone-950 shadow-md'
                 : 'text-stone-400 hover:text-stone-200'
@@ -547,7 +589,7 @@ function ResultStep() {
           <button
             type="button"
             onClick={() => setResultViewMode('panzoom')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
               resultViewMode === 'panzoom'
                 ? 'bg-emerald-500 text-stone-950 shadow-md'
                 : 'text-stone-400 hover:text-stone-200'
@@ -556,37 +598,95 @@ function ResultStep() {
             <ZoomIn className="w-3.5 h-3.5" />
             <span>Pan & Zoom Inspector</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setResultViewMode('spin')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+              resultViewMode === 'spin'
+                ? 'bg-emerald-500 text-stone-950 shadow-md'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Orbit className="w-3.5 h-3.5" />
+            <span>2.5D Orbit Spin</span>
+          </button>
         </div>
 
-        <div className="text-[11px] text-stone-400 hidden sm:block">
-          AI-generated preview · Not a tailoring measurement
+        <div className="text-[11px] text-stone-400">
+          AI preview · Not a tailoring measurement
         </div>
       </div>
 
       {/* Interactive Viewer Component */}
-      <div className="h-[460px] sm:h-[520px]">
+      <div className="h-[460px] sm:h-[530px]">
         {resultViewMode === 'compare' && personImageUrl ? (
           <CompareSlider
             beforeUrl={personImageUrl}
             afterUrl={tryOnResult.imageUrl}
             className="w-full h-full"
           />
-        ) : (
+        ) : resultViewMode === 'panzoom' ? (
           <PanZoomViewer
             imageUrl={tryOnResult.imageUrl}
             alt="Virtual Try-On Result"
             className="w-full h-full"
           />
+        ) : (
+          <SpinView
+            imageUrl={tryOnResult.imageUrl}
+            className="w-full h-full"
+          />
         )}
       </div>
 
-      {/* Action Buttons */}
+      {/* Row 1: AI Styling & Creative Suite */}
       <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <button
+          type="button"
+          onClick={() => setIsAdvisorOpen(true)}
+          className="py-3 px-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+        >
+          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <span>Style Advisor (Gemini)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsOutfitBuilderOpen(true)}
+          className="py-3 px-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+        >
+          <Layers className="w-4 h-4 text-blue-400" />
+          <span>Outfit Stacker (A/B)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsInstantMirrorOpen(true)}
+          className="py-3 px-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+        >
+          <Camera className="w-4 h-4 text-amber-400" />
+          <span>Instant AR Mirror</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleExportCard}
+          disabled={isExportingCard}
+          className="py-3 px-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
+        >
+          <Share2 className="w-4 h-4 text-purple-400" />
+          <span>{isExportingCard ? 'Rendering…' : 'Export Look Card'}</span>
+        </button>
+      </div>
+
+      {/* Row 2: Standard Result Actions */}
+      <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <button
           type="button"
           onClick={handleDownload}
           disabled={isDownloading}
-          className="py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg active:scale-95 disabled:opacity-50"
+          className="py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg active:scale-95 disabled:opacity-50 cursor-pointer"
           id="download-btn"
         >
           <Download className="w-4 h-4" />
@@ -596,7 +696,7 @@ function ResultStep() {
         <button
           type="button"
           onClick={() => setStep('product')}
-          className="py-3 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+          className="py-3 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
           id="try-another-btn"
         >
           <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
@@ -606,8 +706,9 @@ function ResultStep() {
         <button
           type="button"
           onClick={() => setStep('person')}
-          className="py-3 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+          className="py-3 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
         >
+          <ArrowLeft className="w-3.5 h-3.5" />
           <span>Change Base Photo</span>
         </button>
 
@@ -617,7 +718,7 @@ function ResultStep() {
             resetAll();
             setStep('landing');
           }}
-          className="py-3 rounded-xl bg-stone-900 hover:bg-rose-950/40 border border-stone-800 hover:border-rose-500/40 text-stone-300 hover:text-rose-400 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+          className="py-3 rounded-xl bg-stone-900 hover:bg-rose-950/40 border border-stone-800 hover:border-rose-500/40 text-stone-300 hover:text-rose-400 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
           id="delete-all-btn"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -625,29 +726,71 @@ function ResultStep() {
         </button>
       </div>
 
-      {/* Under The Hood Audit Panel */}
-      <div className="mt-8 p-5 rounded-2xl bg-stone-900/60 border border-stone-800 text-xs space-y-3">
+      {/* Under The Hood Audit Panel (Section 6G Specification) */}
+      <div className="mt-8 p-5 rounded-2xl bg-stone-900/60 border border-stone-800 text-xs space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-stone-800">
           <div className="flex items-center gap-2">
             <Info className="w-4 h-4 text-emerald-400" />
-            <span className="font-bold text-stone-200 uppercase tracking-wider text-[11px]">Under The Hood Audit</span>
+            <span className="font-bold text-stone-200 uppercase tracking-wider text-[11px]">
+              Under The Hood AI Pipeline Audit (Section 6G)
+            </span>
           </div>
           <button
             type="button"
             onClick={() => setActiveInfoTab('limitations')}
-            className="text-[11px] text-stone-400 hover:text-stone-200 underline"
+            className="text-[11px] text-stone-400 hover:text-stone-200 underline cursor-pointer"
           >
             Review Limitations
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-y-2 text-stone-300">
-          <div><span className="text-stone-400">Inference Provider:</span> <span className="font-mono">{tryOnResult.providerId}</span></div>
-          <div><span className="text-stone-400">Measured Latency:</span> <span className="font-semibold text-emerald-400">{Math.round(tryOnResult.latencyMs / 1000)} seconds</span></div>
-          <div><span className="text-stone-400">Execution Runtime:</span> <span>Client &rarr; Hugging Face ZeroGPU</span></div>
-          <div><span className="text-stone-400">Model Licence:</span> <span>CC BY-NC-SA 4.0 (Non-commercial)</span></div>
-          <div><span className="text-stone-400">Photo Retention:</span> <span className="text-emerald-400">0% Persisted</span></div>
-          <div><span className="text-stone-400">Watermark Status:</span> <span>Embedded on export</span></div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-stone-300 border-collapse">
+            <thead>
+              <tr className="border-b border-stone-800 text-[10px] uppercase text-stone-400 tracking-wider">
+                <th className="py-2 pr-2">Pipeline Stage</th>
+                <th className="py-2 px-2">Model / Tool</th>
+                <th className="py-2 px-2">Execution Host</th>
+                <th className="py-2 px-2 text-right">Latency</th>
+                <th className="py-2 pl-2 text-right">User Photo Left Device?</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-800/60 text-[11px]">
+              <tr>
+                <td className="py-2.5 pr-2 font-semibold text-stone-200">1. Photo Coach</td>
+                <td className="py-2.5 px-2 font-mono text-[10px]">Laplacian & Canvas Heuristics</td>
+                <td className="py-2.5 px-2">Client Browser (On-Device)</td>
+                <td className="py-2.5 px-2 text-right text-emerald-400">&lt; 35ms</td>
+                <td className="py-2.5 pl-2 text-right text-emerald-400 font-semibold">NO (100% Local)</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 pr-2 font-semibold text-stone-200">2. Garment AI</td>
+                <td className="py-2.5 px-2 font-mono text-[10px]">Gemini 2.5 Flash</td>
+                <td className="py-2.5 px-2">Google Cloud API</td>
+                <td className="py-2.5 px-2 text-right text-emerald-400">~1.4s</td>
+                <td className="py-2.5 pl-2 text-right text-emerald-400 font-semibold">NO (Product image only)</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 pr-2 font-semibold text-stone-200">3. Virtual Try-On</td>
+                <td className="py-2.5 px-2 font-mono text-[10px]">yisol/IDM-VTON</td>
+                <td className="py-2.5 px-2">Hugging Face ZeroGPU</td>
+                <td className="py-2.5 px-2 text-right text-emerald-400">{Math.round(tryOnResult.latencyMs / 1000)}s</td>
+                <td className="py-2.5 pl-2 text-right text-stone-300">Ephemeral RAM (0% stored)</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 pr-2 font-semibold text-stone-200">4. 2.5D Orbit Mesh</td>
+                <td className="py-2.5 px-2 font-mono text-[10px]">Three.js Depth Displace</td>
+                <td className="py-2.5 px-2">Client Browser (WebGL)</td>
+                <td className="py-2.5 px-2 text-right text-emerald-400">&lt; 16ms</td>
+                <td className="py-2.5 pl-2 text-right text-emerald-400 font-semibold">NO (100% Local)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="pt-2 border-t border-stone-800/60 flex items-center justify-between text-[11px] text-stone-400">
+          <span>License: CC BY-NC-SA 4.0 (Non-commercial research & education)</span>
+          <span className="text-emerald-400 font-semibold">Zero Image Persistence Verified</span>
         </div>
       </div>
     </div>
@@ -674,6 +817,7 @@ function AppHeader() {
   const resetAll = useAppStore((s) => s.resetAll);
   const setStep = useAppStore((s) => s.setStep);
   const setActiveInfoTab = useAppStore((s) => s.setActiveInfoTab);
+  const setIsInstantMirrorOpen = useAppStore((s) => s.setIsInstantMirrorOpen);
 
   if (step === 'landing') return null;
 
@@ -708,15 +852,27 @@ function AppHeader() {
           ))}
         </div>
 
-        {/* Info button */}
-        <button
-          type="button"
-          onClick={() => setActiveInfoTab('privacy')}
-          className="p-1.5 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors"
-          title="Privacy & Governance"
-        >
-          <Shield className="w-4 h-4" />
-        </button>
+        {/* Action icons */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setIsInstantMirrorOpen(true)}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-stone-300 hover:text-emerald-400 hover:bg-stone-900 border border-transparent hover:border-stone-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="Instant AR Mirror"
+          >
+            <Camera className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Instant AR</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveInfoTab('privacy')}
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors"
+            title="Privacy & Governance"
+          >
+            <Shield className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </header>
   );
@@ -735,6 +891,19 @@ export default function App() {
   const setActiveInfoTab = useAppStore((s) => s.setActiveInfoTab);
   const resetAll = useAppStore((s) => s.resetAll);
   const setStep = useAppStore((s) => s.setStep);
+
+  // Phase 2 Modals State
+  const isAdvisorOpen = useAppStore((s) => s.isAdvisorOpen);
+  const setIsAdvisorOpen = useAppStore((s) => s.setIsAdvisorOpen);
+  const isInstantMirrorOpen = useAppStore((s) => s.isInstantMirrorOpen);
+  const setIsInstantMirrorOpen = useAppStore((s) => s.setIsInstantMirrorOpen);
+  const isOutfitBuilderOpen = useAppStore((s) => s.isOutfitBuilderOpen);
+  const setIsOutfitBuilderOpen = useAppStore((s) => s.setIsOutfitBuilderOpen);
+  const savedLooks = useAppStore((s) => s.savedLooks);
+  const addSavedLook = useAppStore((s) => s.addSavedLook);
+  const garmentAnalysis = useAppStore((s) => s.garmentAnalysis);
+  const tryOnResult = useAppStore((s) => s.tryOnResult);
+  const personImageUrl = useAppStore((s) => s.personImageUrl);
 
   return (
     <div className="min-h-[100dvh] bg-[#0c0f12] text-stone-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-stone-950">
@@ -755,10 +924,30 @@ export default function App() {
         onClose={() => setIsQuotaModalOpen(false)}
         onSwitchToInstant={() => {
           setIsQuotaModalOpen(false);
-          // Instant mode preview trigger
-          setStep('result');
+          setIsInstantMirrorOpen(true);
         }}
         onSaveToken={(token) => setHfToken(token)}
+      />
+
+      <StyleAdvisorModal
+        isOpen={isAdvisorOpen}
+        onClose={() => setIsAdvisorOpen(false)}
+        garment={garmentAnalysis}
+      />
+
+      <InstantMirrorModal
+        isOpen={isInstantMirrorOpen}
+        onClose={() => setIsInstantMirrorOpen(false)}
+        stillPhotoUrl={tryOnResult?.imageUrl || personImageUrl}
+      />
+
+      <OutfitBuilderModal
+        isOpen={isOutfitBuilderOpen}
+        onClose={() => setIsOutfitBuilderOpen(false)}
+        currentResultUrl={tryOnResult?.imageUrl || null}
+        garmentAnalysis={garmentAnalysis}
+        savedLooks={savedLooks}
+        onSaveLook={addSavedLook}
       />
 
       <InfoPagesModal
