@@ -21,7 +21,6 @@ import {
   Orbit,
   Layers,
   Share2,
-  Camera,
 } from 'lucide-react';
 import { useAppStore } from './store/app-store';
 import { ImageUpload } from './components/ImageUpload';
@@ -33,7 +32,6 @@ import { CompareSlider } from './components/CompareSlider';
 import { PanZoomViewer } from './components/PanZoomViewer';
 import { SpinView } from './components/SpinView';
 import { StyleAdvisorModal } from './components/StyleAdvisorModal';
-import { InstantMirrorModal } from './components/InstantMirrorModal';
 import { OutfitBuilderModal } from './components/OutfitBuilderModal';
 import { QuotaModal } from './components/QuotaModal';
 import { InfoPagesModal } from './components/InfoPagesModal';
@@ -49,7 +47,6 @@ function LandingSection() {
   const setStep = useAppStore((s) => s.setStep);
   const consentGiven = useAppStore((s) => s.consentGiven);
   const setActiveInfoTab = useAppStore((s) => s.setActiveInfoTab);
-  const setIsInstantMirrorOpen = useAppStore((s) => s.setIsInstantMirrorOpen);
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
@@ -80,11 +77,11 @@ function LandingSection() {
         </p>
 
         {/* CTAs */}
-        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center">
+        <div className="mt-8 flex flex-col sm:flex-row gap-3.5 justify-center items-center">
           <button
             type="button"
             onClick={() => setStep(consentGiven ? 'person' : 'person')}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-bold transition-all shadow-[0_0_25px_rgba(52,211,153,0.3)] hover:scale-[1.02] active:scale-95 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-stone-950 font-bold transition-all shadow-[0_0_25px_rgba(52,211,153,0.3)] hover:scale-[1.02] active:scale-95 cursor-pointer"
             id="start-btn"
           >
             <span>Try with your photo</span>
@@ -92,16 +89,6 @@ function LandingSection() {
           </button>
 
           <SampleDemoButton />
-
-          <button
-            type="button"
-            onClick={() => setIsInstantMirrorOpen(true)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 hover:border-emerald-500/40 text-stone-200 text-sm font-semibold transition-all active:scale-95 cursor-pointer"
-            id="instant-mirror-btn"
-          >
-            <Camera className="w-4 h-4 text-emerald-400" />
-            <span>Instant AR Mirror</span>
-          </button>
         </div>
 
         {/* 3 Step Overview */}
@@ -522,7 +509,6 @@ function ResultStep() {
   const setResultViewMode = useAppStore((s) => s.setResultViewMode);
   const setActiveInfoTab = useAppStore((s) => s.setActiveInfoTab);
   const setIsAdvisorOpen = useAppStore((s) => s.setIsAdvisorOpen);
-  const setIsInstantMirrorOpen = useAppStore((s) => s.setIsInstantMirrorOpen);
   const setIsOutfitBuilderOpen = useAppStore((s) => s.setIsOutfitBuilderOpen);
 
   const [isDownloading, setIsDownloading] = useState(false);
@@ -662,15 +648,6 @@ function ResultStep() {
 
         <button
           type="button"
-          onClick={() => setIsInstantMirrorOpen(true)}
-          className="py-3 px-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
-        >
-          <Camera className="w-4 h-4 text-amber-400" />
-          <span>Instant AR Mirror</span>
-        </button>
-
-        <button
-          type="button"
           onClick={handleExportCard}
           disabled={isExportingCard}
           className="py-3 px-2 rounded-xl bg-stone-900 hover:bg-stone-800 border border-stone-800 text-stone-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
@@ -678,10 +655,7 @@ function ResultStep() {
           <Share2 className="w-4 h-4 text-purple-400" />
           <span>{isExportingCard ? 'Rendering…' : 'Export Look Card'}</span>
         </button>
-      </div>
 
-      {/* Row 2: Standard Result Actions */}
-      <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <button
           type="button"
           onClick={handleDownload}
@@ -692,7 +666,10 @@ function ResultStep() {
           <Download className="w-4 h-4" />
           <span>{isDownloading ? 'Saving…' : 'Download (Watermarked)'}</span>
         </button>
+      </div>
 
+      {/* Row 2: Standard Result Actions */}
+      <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         <button
           type="button"
           onClick={() => setStep('product')}
@@ -817,7 +794,6 @@ function AppHeader() {
   const resetAll = useAppStore((s) => s.resetAll);
   const setStep = useAppStore((s) => s.setStep);
   const setActiveInfoTab = useAppStore((s) => s.setActiveInfoTab);
-  const setIsInstantMirrorOpen = useAppStore((s) => s.setIsInstantMirrorOpen);
 
   if (step === 'landing') return null;
 
@@ -853,17 +829,7 @@ function AppHeader() {
         </div>
 
         {/* Action icons */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setIsInstantMirrorOpen(true)}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-stone-300 hover:text-emerald-400 hover:bg-stone-900 border border-transparent hover:border-stone-800 transition-colors flex items-center gap-1.5 cursor-pointer"
-            title="Instant AR Mirror"
-          >
-            <Camera className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Instant AR</span>
-          </button>
-
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveInfoTab('privacy')}
@@ -895,15 +861,12 @@ export default function App() {
   // Phase 2 Modals State
   const isAdvisorOpen = useAppStore((s) => s.isAdvisorOpen);
   const setIsAdvisorOpen = useAppStore((s) => s.setIsAdvisorOpen);
-  const isInstantMirrorOpen = useAppStore((s) => s.isInstantMirrorOpen);
-  const setIsInstantMirrorOpen = useAppStore((s) => s.setIsInstantMirrorOpen);
   const isOutfitBuilderOpen = useAppStore((s) => s.isOutfitBuilderOpen);
   const setIsOutfitBuilderOpen = useAppStore((s) => s.setIsOutfitBuilderOpen);
   const savedLooks = useAppStore((s) => s.savedLooks);
   const addSavedLook = useAppStore((s) => s.addSavedLook);
   const garmentAnalysis = useAppStore((s) => s.garmentAnalysis);
   const tryOnResult = useAppStore((s) => s.tryOnResult);
-  const personImageUrl = useAppStore((s) => s.personImageUrl);
 
   return (
     <div className="min-h-[100dvh] bg-[#0c0f12] text-stone-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-stone-950">
@@ -922,10 +885,6 @@ export default function App() {
       <QuotaModal
         isOpen={isQuotaModalOpen}
         onClose={() => setIsQuotaModalOpen(false)}
-        onSwitchToInstant={() => {
-          setIsQuotaModalOpen(false);
-          setIsInstantMirrorOpen(true);
-        }}
         onSaveToken={(token) => setHfToken(token)}
       />
 
@@ -933,12 +892,6 @@ export default function App() {
         isOpen={isAdvisorOpen}
         onClose={() => setIsAdvisorOpen(false)}
         garment={garmentAnalysis}
-      />
-
-      <InstantMirrorModal
-        isOpen={isInstantMirrorOpen}
-        onClose={() => setIsInstantMirrorOpen(false)}
-        stillPhotoUrl={tryOnResult?.imageUrl || personImageUrl}
       />
 
       <OutfitBuilderModal
